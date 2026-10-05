@@ -6,6 +6,15 @@ from dotenv import load_dotenv
 from database import init_db
 from commands import setup_commands
 
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/ping")
+async def ping():
+    return {"status": "ok", "message": "pong"}
+
 # ==== ENV ====
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
