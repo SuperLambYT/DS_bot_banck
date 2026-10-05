@@ -15,10 +15,12 @@ app = FastAPI()
 async def ping():
     return {"status": "ok", "message": "pong"}
 
+
 # ==== ENV ====
 load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD_ID = int(os.getenv("GUILD_ID", "0"))
+
+TOKEN = os.environ.get("DISCORD_TOKEN")
+GUILD_ID = int(os.environ.get("GUILD_ID", "0"))
 
 
 # ==== BOT ====
@@ -55,5 +57,5 @@ setup_commands(bot)
 # ==== RUN ====
 if __name__ == "__main__":
     if not TOKEN:
-        raise SystemExit("DISCORD_TOKEN не найден в .env")
+        raise SystemExit("DISCORD_TOKEN не найден в переменных окружения")
     bot.run(TOKEN)
