@@ -1,4 +1,7 @@
 import os
+import asyncio
+import threading
+
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -7,6 +10,8 @@ from database import init_db
 from commands import setup_commands
 
 from fastapi import FastAPI
+import uvicorn
+
 
 app = FastAPI()
 
@@ -21,6 +26,8 @@ load_dotenv()
 
 TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID", "0"))
+API_HOST = os.environ.get("API_HOST", "0.0.0.0")
+API_PORT = int(os.environ.get("API_PORT", "8000"))
 
 
 # ==== BOT ====
@@ -49,6 +56,23 @@ async def on_ready():
         print(f"Ошибка синхронизации: {e}")
 
 
+# ==== FASTAPI THREAD ====
+def run_fastapi():
+    """Запускает FastAPI в отдельном потоке с собственным event loop."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    config = uvicorn.Config(
+        app,
+        host=API_HOST,
+        port=API_PORT,
+        log_level="info",
+        loop="asyncio",
+    )
+    server = uvicorn.Server(config)
+    loop.run_until_complete(server.serve())
+
+
 # ==== SETUP ====
 init_db()
 setup_commands(bot)
@@ -58,4 +82,11 @@ setup_commands(bot)
 if __name__ == "__main__":
     if not TOKEN:
         raise SystemExit("DISCORD_TOKEN не найден в переменных окружения")
+
+    # Запускаем FastAPI в фоновом потоке
+    api_thread = threading.Thread(target=run_fastapi, daemon=True)
+    api_thread.start()
+    print(f"FastAPI запущен на http://{API_HOST}:{API_PORT}")
+
+    # Бот работает в главном потоке
     bot.run(TOKEN)
